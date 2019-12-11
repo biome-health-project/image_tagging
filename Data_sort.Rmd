@@ -1,0 +1,91 @@
+---
+title: "Exif_sorting"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(here)
+library(dplyr)
+library(ggplot2)
+library(stringr)
+library(reshape2)
+library(readr)
+library(scales)
+library(lubridate)
+library(chron)
+library(plotly)
+
+```
+
+
+
+```{r}
+ef = read.csv("/Users/Nepal/Documents/Biome Health Project/Analysis/merged_exif_important.csv", stringsAsFactors = FALSE)
+```
+
+Filter the dataset to a month between 15th March to 15th April
+```{r}
+ef$date_fixed <-as.Date(ef$date_fixed,"%Y-%m-%d")
+
+sf <- subset(ef, date_fixed >= "2019-03-15" & date_fixed <= "2019-04-15")
+head(sf)
+cat <- unique(sf$date_fixed) 
+cat
+```
+
+Sort the dataset by Site>Date>Time
+```{r}
+str(sf)
+sf$fixed_date_time <- as.POSIXct(sf$fixed_date_time ,tz = "UTC")
+
+time_diff<-sf %>%
+ group_by(site_cam.x) %>%
+ arrange(fixed_date_time) %>%
+ mutate(diff_time = c(0,diff(fixed_date_time)), time_thres = ifelse(diff_time <= 1800, FALSE, TRUE)) %>% 
+ dplyr::filter(time_thres == TRUE)
+nrow(time_diff)  
+nrow(sf)
+## 1800s/30mins = 12421
+## 900s/15mins = 15510
+## 450s/7.5mins = 19310
+## 300s/5mins =22196
+
+head(time_diff)
+table(time_diff$time_thres) 
+
+write.csv(time_diff, "30min_hteshold.csv")
+
+time_diff$new_file_structure <- gsub(pattern = "M:", "B:", time_diff$new_file_structure)
+head(time_diff)
+tagging_folder <- "B:/biome_health_project_files/country_files/nepal/tagging_photos/30min_threshold"
+file_name <- basename(time_diff$new_file_structure)
+new_dest <- paste(tagging_folder, file_name, sep = "/")
+
+file.copy(time_diff$new_file_structure, new_dest)
+```
+
+```{r}
+tf30<-sf %>%
+ group_by(site_cam.x) %>%
+ arrange(fixed_date_time) %>%
+ mutate(diff_time = c(0,diff(fixed_date_time)), time_thres = ifelse(diff_time <= 1800, FALSE, TRUE)) %>% 
+ dplyr::filter(time_thres == TRUE)
+nrow(tf30)
+
+tf5<-sf %>%
+ group_by(site_cam.x) %>%
+ arrange(fixed_date_time) %>%
+ mutate(diff_time = c(0,diff(fixed_date_time)), time_thres = ifelse(diff_time <= 300, FALSE, TRUE)) %>% 
+ dplyr::filter(time_thres == TRUE)
+nrow(tf5)
+
+tf30$Image_nam<-basename(tf30$new_file_structure)
+tf5$Image_nam<-basename(tf5$new_file_structure)
+head(tf30)
+tf30to5 <- anti_join(tf5, tf30, by = "Image_nam" )
+nrow(tf30to5)
+```
