@@ -59,7 +59,8 @@ thin.events <- function(obsdat, interval, format="%Y:%m:%d %H:%M:%S", tz="UTC"){
 
 
 # reading data and organising it
-data <- fread("Z:/biome_health_project_files/country_files/nepal/processed_data/2019_CTimages_exifdata_Nepal_complete.csv") # Nepal's 2019 exif data
+# Nepal's 2019 exif data
+data <- fread("X:/xxxxxxx/xxxxx/xxxxx/nepal/processed_data/2019_CTimages_exifdata_Nepal_complete.csv") # part of file path ommited in the public version
 str(data)
 
 # selecting a small subset to test the thin.events function
